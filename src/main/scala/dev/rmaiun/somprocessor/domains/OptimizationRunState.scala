@@ -1,4 +1,4 @@
-package domains
+package dev.rmaiun.somprocessor.domains
 
 sealed trait OptimizationRunState {}
 object OptimizationRunState {

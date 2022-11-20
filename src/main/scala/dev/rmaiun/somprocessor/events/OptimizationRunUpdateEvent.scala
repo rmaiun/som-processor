@@ -1,6 +1,6 @@
-package events
+package dev.rmaiun.somprocessor.events
 
-import domains.OptimizationRunState
+import dev.rmaiun.somprocessor.domains.OptimizationRunState
 
 sealed trait OptimizationRunUpdateEvent {}
 object OptimizationRunUpdateEvent {

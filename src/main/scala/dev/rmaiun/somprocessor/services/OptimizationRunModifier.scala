@@ -6,8 +6,19 @@ import dev.rmaiun.somprocessor.events.OptimizationRunUpdateEvent.{ChangeState, I
 
 class OptimizationRunModifier[F[_]:Sync] {
   def applyUpdate(event:OptimizationRunUpdateEvent): F[Unit] = {
-    case irEvent:IncrementResult => Sync[F].delay(println("I`m IncrementResult"))
-    case csEvent:ChangeState => Sync[F].delay(println("I`m ChangeState"))
-    case _ => Sync[F].delay(println("Another type"))
+    event match {
+      case irEvent: IncrementResult => Sync[F].delay(println("I`m IncrementResult"))
+      case csEvent: ChangeState => Sync[F].delay(println("I`m ChangeState"))
+      case _ => Sync[F].delay(println("Another type"))
+    }
   }
 }
+
+object OptimizationRunModifier{
+  def apply[F[_]](implicit ev: OptimizationRunModifier[F]): OptimizationRunModifier[F] = ev
+
+  def impl[F[_]:Sync]: OptimizationRunModifier[F] =
+    new OptimizationRunModifier[F]()
+}
+
+

@@ -1,3 +1,3 @@
 package dev.rmaiun.somprocessor.dtos
 
-case class GenerateInputDocumentEvent () extends Event("GENERATE_INPUT_DOC_EVENT")
+case class GenerateInputDocumentEvent (optimizationRunId: Long) extends Event

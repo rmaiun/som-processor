@@ -7,8 +7,8 @@ import dev.rmaiun.somprocessor.events.OptimizationRunUpdateEvent.{ChangeState, I
 class OptimizationRunModifier[F[_]:Sync] {
   def applyUpdate(event:OptimizationRunUpdateEvent): F[Unit] = {
     event match {
-      case irEvent: IncrementResult => Sync[F].delay(println("I`m IncrementResult"))
-      case csEvent: ChangeState => Sync[F].delay(println("I`m ChangeState"))
+      case _: IncrementResult => Sync[F].delay(println("I`m IncrementResult"))
+      case _: ChangeState => Sync[F].delay(println("I`m ChangeState"))
       case _ => Sync[F].delay(println("Another type"))
     }
   }

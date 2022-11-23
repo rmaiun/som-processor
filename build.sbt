@@ -9,15 +9,16 @@ lazy val root = (project in file("."))
   .settings(
     name := "som-processor",
     libraryDependencies ++= Seq(
-      "org.typelevel"   %% "cats-core"         % "2.9.0",
-      "org.typelevel"   %% "cats-effect"       % "3.4.1",
-      "com.github.fd4s" %% "fs2-kafka"         % "2.5.0",
-      "com.github.fd4s" %% "fs2-kafka-vulcan"  % "2.5.0",
-      "com.github.fd4s" %% "vulcan-enumeratum" % "1.8.3",
-      "com.github.fd4s" %% "vulcan-generic"    % "1.8.3",
-      "dev.profunktor"  %% "fs2-rabbit"        % "4.1.1",
-      "ch.qos.logback"   % "logback-classic"   % "1.2.3",
-      "org.typelevel"   %% "log4cats-slf4j"    % "2.2.0"
+      "org.typelevel"         %% "cats-core"         % "2.9.0",
+      "org.typelevel"         %% "cats-effect"       % "3.4.1",
+      "com.github.fd4s"       %% "fs2-kafka"         % "2.5.0",
+      "com.github.fd4s"       %% "fs2-kafka-vulcan"  % "2.5.0",
+      "com.github.fd4s"       %% "vulcan-enumeratum" % "1.8.3",
+      "com.github.fd4s"       %% "vulcan-generic"    % "1.8.3",
+      "dev.profunktor"        %% "fs2-rabbit"        % "4.1.1",
+      "ch.qos.logback"         % "logback-classic"   % "1.2.3",
+      "org.typelevel"         %% "log4cats-slf4j"    % "2.2.0",
+      "com.github.pureconfig" %% "pureconfig"        % "0.14.0"
     ),
     testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework")
   )

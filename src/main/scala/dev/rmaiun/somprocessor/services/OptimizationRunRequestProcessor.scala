@@ -3,15 +3,16 @@ package dev.rmaiun.somprocessor.services
 import cats.effect.Sync
 import cats.implicits._
 import dev.rmaiun.somprocessor.domains.OptimizationRun
-import dev.rmaiun.somprocessor.dtos.{ EventProducers, GenerateInputDocumentEvent, StartRequestProcessingEvent }
-import dev.rmaiun.somprocessor.events.OptimizationRunUpdateEvent.{ BindAlgorithm, PairRequest }
-import dev.rmaiun.somprocessor.repositories.{ AlgorithmLockRepository, AlgorithmRepository, OptimizationRunRepository }
+import dev.rmaiun.somprocessor.dtos.Event.{GenerateInputDocumentEvent, StartRequestProcessingEvent}
+import dev.rmaiun.somprocessor.dtos.EventProducers
+import dev.rmaiun.somprocessor.events.OptimizationRunUpdateEvent.{BindAlgorithm, PairRequest}
+import dev.rmaiun.somprocessor.repositories.{AlgorithmLockRepository, AlgorithmRepository, OptimizationRunRepository}
 import fs2.Chunk
-import fs2.kafka.{ ProducerRecord, ProducerRecords }
+import fs2.kafka.{ProducerRecord, ProducerRecords}
 import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 
-import java.time.{ ZoneOffset, ZonedDateTime }
+import java.time.{ZoneOffset, ZonedDateTime}
 case class OptimizationRunRequestProcessor[F[_]](
   algorithmRepository: AlgorithmRepository[F],
   algorithmLockRepository: AlgorithmLockRepository[F],

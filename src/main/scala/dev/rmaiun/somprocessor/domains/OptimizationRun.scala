@@ -12,5 +12,12 @@ case class OptimizationRun(
   resultReceived: Int,
   finalLogsReceivedQty: Int,
   successfulResultReceived: Boolean,
-  assignedRequest: Long
+  assignedRequest: Long,
+  messageId: String
 )
+
+object OptimizationRun {
+  val updateOptimizationRunTopic = "opt_run_updates"
+  val generateInputFileTopic     = "generate_som_input"
+  val createSomConnectionTopic   = "som_connection_create"
+}

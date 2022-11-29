@@ -3,32 +3,30 @@ package dev.rmaiun.somprocessor.services
 import cats.Monad
 import cats.data.Kleisli
 import cats.effect.std.Dispatcher
-import cats.effect.{Async, MonadCancel, Ref}
+import cats.effect.{ Async, MonadCancel, Ref }
 import dev.profunktor.fs2rabbit.arguments.Arguments
 import dev.profunktor.fs2rabbit.config.Fs2RabbitConfig
 import dev.profunktor.fs2rabbit.config.declaration._
 import dev.profunktor.fs2rabbit.effects.MessageEncoder
 import dev.profunktor.fs2rabbit.interpreter.RabbitClient
-import dev.profunktor.fs2rabbit.model.ExchangeType.{Direct, FanOut}
+import dev.profunktor.fs2rabbit.model.ExchangeType.{ Direct, FanOut }
 import dev.profunktor.fs2rabbit.model._
 import dev.rmaiun.somprocessor.dtos.configuration.SomBrokerConfiguration
-import fs2.concurrent.SignallingRef
-import fs2.{Stream => Fs2Stream}
+import fs2.{ Stream => Fs2Stream }
 
 import java.nio.charset.Charset
 import scala.concurrent.duration._
 
 object RabbitInitializer {
-  type AmqpPublisher[F[_]]  = AmqpMessage[String] => F[Unit]
-  type AmqpConsumer[F[_]]   = Fs2Stream[F, AmqpEnvelope[String]]
-  type MonadThrowable[F[_]] = MonadCancel[F, Throwable]
-  type AlgorithmCode = String
+  type AmqpPublisher[F[_]]     = AmqpMessage[String] => F[Unit]
+  type AmqpConsumer[F[_]]      = Fs2Stream[F, AmqpEnvelope[String]]
+  type MonadThrowable[F[_]]    = MonadCancel[F, Throwable]
+  type AlgorithmCode           = String
   type OpenedConnections[F[_]] = Ref[F, Map[AlgorithmCode, AmqpStructures[F]]]
   case class AmqpStructures[F[_]](
     requestPublisher: AmqpPublisher[F],
-    requestConsumer: AmqpConsumer[F],
-    resultsPublisher: AmqpPublisher[F],
-    logsPublisher: AmqpPublisher[F]
+    resultsConsumer: AmqpConsumer[F],
+    logsConsumer: AmqpConsumer[F]
   )
 
   def config(cfg: SomBrokerConfiguration): Fs2RabbitConfig = Fs2RabbitConfig(
@@ -87,10 +85,9 @@ object RabbitInitializer {
       Kleisli[F, AmqpMessage[String], AmqpMessage[Array[Byte]]](s => Monad[F].pure(s.copy(payload = s.payload.getBytes(Charset.defaultCharset()))))
     for {
       requestPublisher <- publisher(requestExchange(algorithm), defaultRoutingKey, rc)
-      resultsPublisher <- publisher(resultsInternalExchange(algorithm), defaultRoutingKey, rc)
-      logsPublisher    <- publisher(logsInternalExchange(algorithm), defaultRoutingKey, rc)
-      requestConsumer  <- autoAckConsumer(requestQueue(algorithm), rc)
-    } yield AmqpStructures(requestPublisher, requestConsumer, resultsPublisher, logsPublisher)
+      resultsConsumer  <- autoAckConsumer(resultsQueue(algorithm), rc)
+      logsConsumer     <- autoAckConsumer(logsQueue(algorithm), rc)
+    } yield AmqpStructures(requestPublisher, resultsConsumer, logsConsumer)
   }
 
   private def autoAckConsumer[F[_]: MonadThrowable](

@@ -21,5 +21,5 @@ object OptimizationRunUpdateEvent {
   @AvroNamespace("dev.rmaiun.somprocessor")
   final case class PairRequest(id: Long, requestId: Long) extends OptimizingEvent
   @AvroNamespace("dev.rmaiun.somprocessor")
-  final case class AssignMessageId(id: Long, messageId: Long) extends OptimizingEvent
+  final case class AssignMessageId(id: Long, messageId: String) extends OptimizingEvent
 }

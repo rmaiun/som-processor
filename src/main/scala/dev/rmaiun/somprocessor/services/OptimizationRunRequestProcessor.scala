@@ -1,18 +1,20 @@
 package dev.rmaiun.somprocessor.services
 
+import cats.Monad
 import cats.effect.Sync
 import cats.implicits._
 import dev.rmaiun.somprocessor.domains.OptimizationRun
-import dev.rmaiun.somprocessor.dtos.Event.{GenerateInputDocumentEvent, StartRequestProcessingEvent}
+import dev.rmaiun.somprocessor.domains.OptimizationRun._
+import dev.rmaiun.somprocessor.dtos.Event.{ GenerateInputDocumentEvent, StartRequestProcessingEvent }
 import dev.rmaiun.somprocessor.dtos.EventProducers
-import dev.rmaiun.somprocessor.events.OptimizationRunUpdateEvent.{BindAlgorithm, PairRequest}
-import dev.rmaiun.somprocessor.repositories.{AlgorithmLockRepository, AlgorithmRepository, OptimizationRunRepository}
+import dev.rmaiun.somprocessor.events.OptimizationRunUpdateEvent.{ BindAlgorithm, PairRequest }
+import dev.rmaiun.somprocessor.repositories.{ AlgorithmLockRepository, AlgorithmRepository, OptimizationRunRepository }
 import fs2.Chunk
-import fs2.kafka.{ProducerRecord, ProducerRecords}
+import fs2.kafka.{ ProducerRecord, ProducerRecords }
 import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 
-import java.time.{ZoneOffset, ZonedDateTime}
+import java.time.{ ZoneOffset, ZonedDateTime }
 case class OptimizationRunRequestProcessor[F[_]](
   algorithmRepository: AlgorithmRepository[F],
   algorithmLockRepository: AlgorithmLockRepository[F],
@@ -44,22 +46,23 @@ case class OptimizationRunRequestProcessor[F[_]](
       logger.info("No Initialized Optimization Runs found to process")
     } else {
       val pairedData = pairAlgorithmWithOptimizationRun(foundOptimizationRuns, algorithmCodes)
-      pairedData.map(t2 => updateOptimizationRun(request, t2._1, t2._2).flatMap(invokeFileSending)).sequence_
+      pairedData.map(t2 => updateOptimizationRun(request, t2._1, t2._2).flatMap(t => invokeFileSending(t._1, t._2))).sequence_
     }
   private def pairAlgorithmWithOptimizationRun(foundOptimizationRuns: List[OptimizationRun], algorithmCodes: List[String]): List[(OptimizationRun, String)] = {
     val end = if (foundOptimizationRuns.size > algorithmCodes.size) foundOptimizationRuns.size else algorithmCodes.size
     (0 until end).map(i => (foundOptimizationRuns(i), algorithmCodes(i))).toList
   }
 
-  private def updateOptimizationRun(request: Long, optRun: OptimizationRun, algorithm: String): F[OptimizationRun] = {
+  private def updateOptimizationRun(request: Long, optRun: OptimizationRun, algorithm: String): F[(OptimizationRun, String)] = {
     val endTime = ZonedDateTime.now(ZoneOffset.UTC).toEpochSecond
-    val record1 = ProducerRecord("opt_run_updates", optRun.id.toString, BindAlgorithm(optRun.id, algorithm, endTime))
-    val record2 = ProducerRecord("opt_run_updates", optRun.id.toString, PairRequest(optRun.id, request))
+    val record1 = ProducerRecord(updateOptimizationRunTopic, optRun.id.toString, BindAlgorithm(optRun.id, algorithm, endTime))
+    val record2 = ProducerRecord(updateOptimizationRunTopic, optRun.id.toString, PairRequest(optRun.id, request))
     val chunk   = Chunk.seq(Seq(record1, record2))
-    eventProducers.optimizationRunUpdateProducer.produce(ProducerRecords.chunk(chunk)).flatten.map(_ => optRun.copy(algorithmCode = algorithm))
+    eventProducers.optimizationRunUpdateProducer.produce(ProducerRecords.chunk(chunk)).flatten.map(_ => optRun.copy(algorithmCode = algorithm)) *>
+      Monad[F].pure((optRun, algorithm))
   }
-  private def invokeFileSending(optRun: OptimizationRun): F[Unit] = {
-    val record = ProducerRecord("generate_som_input", optRun.id.toString, GenerateInputDocumentEvent(optRun.id))
+  private def invokeFileSending(optRun: OptimizationRun, algorithm: String): F[Unit] = {
+    val record = ProducerRecord(generateInputFileTopic, optRun.id.toString, GenerateInputDocumentEvent(optRun.id, algorithm))
     eventProducers.somInputProducer.produce(ProducerRecords.one(record)).flatten.map(_ => ())
   }
 }

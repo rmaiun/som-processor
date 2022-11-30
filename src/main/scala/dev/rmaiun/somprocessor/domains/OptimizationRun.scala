@@ -20,4 +20,5 @@ object OptimizationRun {
   val updateOptimizationRunTopic = "opt_run_updates"
   val generateInputFileTopic     = "generate_som_input"
   val createSomConnectionTopic   = "som_connection_create"
+  val sendSomInputTopic          = "send_som_input"
 }

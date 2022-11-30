@@ -1,12 +1,15 @@
 package dev.rmaiun.somprocessor.services
 
 import cats.Monad
-import cats.effect.Async
+import cats.effect.{ Async, Concurrent }
 import cats.implicits._
-import dev.rmaiun.somprocessor.dtos.Event.{ CreateSomConnection, SendSomRequest }
+import dev.rmaiun.somprocessor.domains.OptimizationRun.sendSomInputTopic
+import dev.rmaiun.somprocessor.dtos.Event.{ CreateSomConnection, DisconnectFromSom, SendSomRequest }
+import dev.rmaiun.somprocessor.dtos.EventProducers
 import dev.rmaiun.somprocessor.dtos.configuration.AppConfiguration
-import dev.rmaiun.somprocessor.dtos.{ EventProducers, RabbitSwitches }
-import dev.rmaiun.somprocessor.services.RabbitInitializer.OpenedConnections
+import dev.rmaiun.somprocessor.repositories.AlgorithmLockRepository
+import dev.rmaiun.somprocessor.services.RabbitInitializer.{ AmqpStructures, OpenedConnections, ShutdownSignals }
+import fs2.concurrent.SignallingRef
 import fs2.kafka.{ ProducerRecord, ProducerRecords }
 import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
@@ -14,32 +17,45 @@ case class SomConnectionProvider[F[_]: Async](
   cfg: AppConfiguration,
   rabbitConnections: OpenedConnections[F],
   eventProducers: EventProducers[F],
-  rabbitSwitches: RabbitSwitches[F],
+  shutdownSignals: ShutdownSignals[F],
+  algorithmLockRepository: AlgorithmLockRepository[F],
   logger: Logger[F]
 ) {
   def createSomConnection(event: CreateSomConnection): F[Unit] =
     for {
-      cfg     <- Monad[F].pure(RabbitInitializer.config(cfg.broker))
-      structs <- RabbitInitializer.initConnection(cfg, event.algorithmCode).compile.toList
-      // todo bind listeners to consumers
-      // todo add signalRefs
-      _     <- rabbitConnections.update(connections => connections ++ (event.algorithmCode -> structs.head))
-      switch = rabbitSwitches.switches.find(_.code == event.algorithmCode)
-      _     <- rabbitSwitches.refreshOptSwitch(switch)
-      logsProcessor <- SomLogReceiver.impl(eventProducers)
-      resultsProcessor <- SomResultReceiver.impl(eventProducers)
-      // todo wrong AmqpStructs structure!
-      _     <- invokeSomRequestSending(event.optimizationId, event.algorithmCode)
+      cfg             <- Monad[F].pure(RabbitInitializer.config(cfg.broker))
+      structs         <- RabbitInitializer.initConnection(cfg, event.algorithmCode).compile.toList
+      resultProcessor <- SomResultReceiver.impl(eventProducers)
+      logProcessor    <- SomLogReceiver.impl(eventProducers)
+      _               <- shutdownSignals.find(_._1 == event.algorithmCode).fold(Monad[F].pure(()))(signal => signal._2.update(_ => false))
+      _               <- forkResultsConsumer(event.algorithmCode, structs.head, resultProcessor)
+      _               <- forkLogsConsumer(event.algorithmCode, structs.head, logProcessor)
+      _               <- rabbitConnections.update(connections => connections ++ (event.algorithmCode -> structs.head))
+      _               <- invokeSomRequestSending(event.optimizationId, event.algorithmCode)
     } yield ()
 
-  def disconnectFromSom(): F[Unit] = ???
-  // todo need to copy everything related to rabbit here
-  // need to finalize
+  def disconnectFromSom(event: DisconnectFromSom): F[Unit] =
+    for {
+      _ <- refreshSwitch(shutdownSignals(event.algorithmCode))
+      _ <- algorithmLockRepository.delete(event.algorithmCode)
+    } yield ()
+
+  private def forkLogsConsumer(algorithm: String, structs: AmqpStructures[F], logProcessor: SomLogReceiver[F]): F[Unit] =
+    Concurrent[F].start(
+      structs.logsConsumer.evalTap(logProcessor.receiveLog).interruptWhen(shutdownSignals(algorithm)).compile.drain
+    ) *> ().pure
+
+  private def forkResultsConsumer(algorithm: String, structs: AmqpStructures[F], resultReceiver: SomResultReceiver[F]): F[Unit] =
+    Concurrent[F].start(
+      structs.logsConsumer.evalTap(resultReceiver.receiveSomMessage).interruptWhen(shutdownSignals(algorithm)).compile.drain
+    ) *> ().pure
 
   private def invokeSomRequestSending(optRunId: Long, algorithmCode: String): F[Unit] = {
-    val record = ProducerRecord("send_som_input", optRunId.toString, SendSomRequest(optRunId, algorithmCode))
+    val record = ProducerRecord(sendSomInputTopic, optRunId.toString, SendSomRequest(optRunId, algorithmCode))
     eventProducers.somRequestSenderProducer.produce(ProducerRecords.one(record)).flatten.map(_ => ())
   }
+  private def refreshSwitch(switch: SignallingRef[F, Boolean]): F[Unit] =
+    switch.update(x => !x) *> switch.update(x => !x)
 }
 
 object SomConnectionProvider {
@@ -49,7 +65,8 @@ object SomConnectionProvider {
     cfg: AppConfiguration,
     rabbitConnections: OpenedConnections[F],
     eventProducers: EventProducers[F],
-    rabbitSwitches: RabbitSwitches[F]
+    shutdownSignals: ShutdownSignals[F],
+    algorithmLockRepository: AlgorithmLockRepository[F]
   ): F[SomConnectionProvider[F]] =
-    Slf4jLogger.create[F].map(new SomConnectionProvider(cfg, rabbitConnections, eventProducers, rabbitSwitches, _))
+    Slf4jLogger.create[F].map(new SomConnectionProvider(cfg, rabbitConnections, eventProducers, shutdownSignals, algorithmLockRepository, _))
 }

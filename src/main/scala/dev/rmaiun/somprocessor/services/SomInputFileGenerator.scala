@@ -26,7 +26,7 @@ case class SomInputFileGenerator[F[_]: Sync](eventProducers: EventProducers[F], 
     } else {
       for {
         msgId <- generateSomInputFile()
-        _ <- logger.info(s"SOM Request file was generated with messageId $msgId")
+        _     <- logger.info(s"SOM Request file was generated with messageId $msgId")
         _     <- addMessageIdForOptimization(event.optimizationRunId, msgId)
         _     <- createSomConnection(event.optimizationRunId, event.algorithmCode, msgId)
       } yield ()

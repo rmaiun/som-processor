@@ -12,6 +12,7 @@ import dev.profunktor.fs2rabbit.interpreter.RabbitClient
 import dev.profunktor.fs2rabbit.model.ExchangeType.{ Direct, FanOut }
 import dev.profunktor.fs2rabbit.model._
 import dev.rmaiun.somprocessor.dtos.configuration.SomBrokerConfiguration
+import fs2.concurrent.SignallingRef
 import fs2.{ Stream => Fs2Stream }
 
 import java.nio.charset.Charset
@@ -23,6 +24,7 @@ object RabbitInitializer {
   type MonadThrowable[F[_]]    = MonadCancel[F, Throwable]
   type AlgorithmCode           = String
   type OpenedConnections[F[_]] = Ref[F, Map[AlgorithmCode, AmqpStructures[F]]]
+  type ShutdownSignals[F[_]]   = Map[String, SignallingRef[F, Boolean]]
   case class AmqpStructures[F[_]](
     requestPublisher: AmqpPublisher[F],
     resultsConsumer: AmqpConsumer[F],

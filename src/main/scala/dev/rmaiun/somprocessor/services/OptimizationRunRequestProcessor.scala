@@ -5,7 +5,7 @@ import cats.effect.Sync
 import cats.implicits._
 import dev.rmaiun.somprocessor.domains.OptimizationRun
 import dev.rmaiun.somprocessor.domains.OptimizationRun._
-import dev.rmaiun.somprocessor.dtos.Event.{ GenerateInputDocumentEvent, StartRequestProcessingEvent }
+import dev.rmaiun.somprocessor.dtos.ProcessingEvent.{ GenerateInputDocumentProcessingEvent, StartRequestProcessingProcessingEvent }
 import dev.rmaiun.somprocessor.dtos.EventProducers
 import dev.rmaiun.somprocessor.events.OptimizationRunUpdateEvent.{ BindAlgorithm, PairRequest }
 import dev.rmaiun.somprocessor.repositories.{ AlgorithmLockRepository, AlgorithmRepository, OptimizationRunRepository }
@@ -22,7 +22,7 @@ case class OptimizationRunRequestProcessor[F[_]](
   eventProducers: EventProducers[F],
   logger: Logger[F]
 )(implicit S: Sync[F]) {
-  def startRequestProcessing(event: StartRequestProcessingEvent): F[Unit] =
+  def startRequestProcessing(event: StartRequestProcessingProcessingEvent): F[Unit] =
     for {
       allAlgorithms    <- algorithmRepository.loadAllAlgorithms()
       lockedAlgorithms <- algorithmLockRepository.loadLocked()
@@ -62,7 +62,7 @@ case class OptimizationRunRequestProcessor[F[_]](
       Monad[F].pure((optRun, algorithm))
   }
   private def invokeFileSending(optRun: OptimizationRun, algorithm: String): F[Unit] = {
-    val record = ProducerRecord(generateInputFileTopic, optRun.id.toString, GenerateInputDocumentEvent(optRun.id, algorithm))
+    val record = ProducerRecord(generateInputFileTopic, optRun.id.toString, GenerateInputDocumentProcessingEvent(optRun.id, algorithm))
     eventProducers.somInputProducer.produce(ProducerRecords.one(record)).flatten.map(_ => ())
   }
 }

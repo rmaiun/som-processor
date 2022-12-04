@@ -3,7 +3,7 @@ package dev.rmaiun.somprocessor.services
 import cats.effect.Sync
 import cats.implicits._
 import dev.profunktor.fs2rabbit.model.{ AmqpMessage, AmqpProperties }
-import dev.rmaiun.somprocessor.dtos.Event.SendSomRequest
+import dev.rmaiun.somprocessor.dtos.ProcessingEvent.SendSomRequest
 import dev.rmaiun.somprocessor.services.RabbitInitializer.OpenedConnections
 import io.circe._
 import org.typelevel.log4cats.Logger

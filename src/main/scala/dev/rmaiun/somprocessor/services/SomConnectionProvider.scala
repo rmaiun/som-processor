@@ -4,7 +4,7 @@ import cats.Monad
 import cats.effect.{ Async, Concurrent }
 import cats.implicits._
 import dev.rmaiun.somprocessor.domains.OptimizationRun.sendSomInputTopic
-import dev.rmaiun.somprocessor.dtos.Event.{ CreateSomConnection, DisconnectFromSom, SendSomRequest }
+import dev.rmaiun.somprocessor.dtos.ProcessingEvent.{ CreateSomConnection, DisconnectFromSom, SendSomRequest }
 import dev.rmaiun.somprocessor.dtos.EventProducers
 import dev.rmaiun.somprocessor.dtos.configuration.AppConfiguration
 import dev.rmaiun.somprocessor.repositories.AlgorithmLockRepository

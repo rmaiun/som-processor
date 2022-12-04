@@ -5,7 +5,7 @@ import cats.effect.Sync
 import cats.implicits._
 import dev.rmaiun.somprocessor.domains.OptimizationRun._
 import dev.rmaiun.somprocessor.domains.OptimizationRunState
-import dev.rmaiun.somprocessor.dtos.Event.{ CreateSomConnection, GenerateInputDocumentEvent }
+import dev.rmaiun.somprocessor.dtos.ProcessingEvent.{ CreateSomConnection, GenerateInputDocumentProcessingEvent }
 import dev.rmaiun.somprocessor.dtos.EventProducers
 import dev.rmaiun.somprocessor.events.OptimizationRunUpdateEvent.{ AssignMessageId, ChangeState }
 import fs2.kafka.{ ProducerRecord, ProducerRecords }
@@ -16,7 +16,7 @@ import java.util.UUID
 import scala.util.Random
 
 case class SomInputFileGenerator[F[_]: Sync](eventProducers: EventProducers[F], logger: Logger[F]) {
-  def generateInputDocument(event: GenerateInputDocumentEvent): F[Unit] = {
+  def generateInputDocument(event: GenerateInputDocumentProcessingEvent): F[Unit] = {
     val randomInt = Random.nextInt(100)
     if (randomInt <= 10) {
       for {

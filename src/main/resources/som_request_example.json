@@ -1,0 +1,109 @@
+{
+  "processId" : "BALANCING-MARKET.mFRR.20220511T040000.000Z.20220511T041500.000Z",
+  "optimizationId" : "637241e735fa4e002aeffab4",
+  "cts" : "2022-11-14T13:26:23.054Z",
+  "solutionTimeout" : "2022-11-14T13:26:47.206Z",
+  "payload" : {
+    "balancingAreas" : [ {
+      "id" : "ELCEN_BA1",
+      "prodOrCons" : "Producer",
+      "accQtyUp" : null,
+      "accQtyDown" : 30,
+      "restrictionMax" : null,
+      "restrictionMin" : null
+    } ],
+    "physicalUnits" : [ {
+      "id" : "ELCEN_BA1_PHU1",
+      "dispatchable" : true,
+      "prodOrCons" : "Producer",
+      "unitType" : "Wind",
+      "marketProgram" : null,
+      "targetProgram" : null,
+      "pMax" : 225,
+      "pMin" : 1,
+      "restrictionMax" : null,
+      "restrictionMin" : null,
+      "teleregulationUp" : 45,
+      "teleregulationDn" : 35,
+      "teleregulationOutageUp" : null,
+      "teleregulationOutageDn" : null,
+      "BA" : "ELCEN_BA1",
+      "Outage" : null
+    }, {
+      "id" : "ELCEN_BA1_PHU2",
+      "dispatchable" : true,
+      "prodOrCons" : "Consumer",
+      "unitType" : "Wind",
+      "marketProgram" : null,
+      "targetProgram" : null,
+      "pMax" : 225,
+      "pMin" : 1,
+      "restrictionMax" : null,
+      "restrictionMin" : null,
+      "teleregulationUp" : 45,
+      "teleregulationDn" : 30,
+      "teleregulationOutageUp" : null,
+      "teleregulationOutageDn" : null,
+      "BA" : "ELCEN_BA1",
+      "Outage" : null
+    } ],
+    "bids" : [ {
+      "id" : "external_id_1",
+      "dir" : "down",
+      "minQty" : 1.01000000,
+      "maxQty" : 340.00000000,
+      "price" : 12.00000000,
+      "groupType" : null,
+      "groupId" : null,
+      "BA" : "ELCEN_BA1"
+    }, {
+      "id" : "external_id_2",
+      "dir" : "up",
+      "minQty" : 1.01000000,
+      "maxQty" : 340.00000000,
+      "price" : 12.00000000,
+      "groupType" : null,
+      "groupId" : null,
+      "BA" : "ELCEN_BA1"
+    }, {
+      "id" : "external_id_3",
+      "dir" : "up",
+      "minQty" : 1.01000000,
+      "maxQty" : 340.00000000,
+      "price" : 12.00000000,
+      "groupType" : null,
+      "groupId" : null,
+      "BA" : "ELCEN_BA1"
+    }, {
+      "id" : "external_id_1",
+      "dir" : "down",
+      "minQty" : 1.01000000,
+      "maxQty" : 340.00000000,
+      "price" : 12.00000000,
+      "groupType" : null,
+      "groupId" : null,
+      "BA" : "ELCEN_BA1"
+    }, {
+      "id" : "external_id_2",
+      "dir" : "up",
+      "minQty" : 1.01000000,
+      "maxQty" : 340.00000000,
+      "price" : 12.00000000,
+      "groupType" : null,
+      "groupId" : null,
+      "BA" : "ELCEN_BA1"
+    }, {
+      "id" : "external_id_3",
+      "dir" : "up",
+      "minQty" : 1.01000000,
+      "maxQty" : 340.00000000,
+      "price" : 12.00000000,
+      "groupType" : null,
+      "groupId" : null,
+      "BA" : "ELCEN_BA1"
+    } ]
+  },
+  "$schema" : "../../../schemas/mari-disaggregation.input.schema.json",
+  "startDP" : "2022-11-11T10:00:00Z",
+  "endDP" : "2022-11-11T10:15:00Z"
+}

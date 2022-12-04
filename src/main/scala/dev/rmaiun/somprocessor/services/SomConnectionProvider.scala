@@ -31,7 +31,7 @@ case class SomConnectionProvider[F[_]: Async](
       _               <- forkResultsConsumer(event.algorithmCode, structs.head, resultProcessor)
       _               <- forkLogsConsumer(event.algorithmCode, structs.head, logProcessor)
       _               <- rabbitConnections.update(connections => connections ++ (event.algorithmCode -> structs.head))
-      _               <- invokeSomRequestSending(event.optimizationId, event.algorithmCode)
+      _               <- invokeSomRequestSending(event.optimizationId, event.algorithmCode, event.messageId)
     } yield ()
 
   def disconnectFromSom(event: DisconnectFromSom): F[Unit] =
@@ -50,8 +50,8 @@ case class SomConnectionProvider[F[_]: Async](
       structs.logsConsumer.evalTap(resultReceiver.receiveSomMessage).interruptWhen(shutdownSignals(algorithm)).compile.drain
     ) *> ().pure
 
-  private def invokeSomRequestSending(optRunId: Long, algorithmCode: String): F[Unit] = {
-    val record = ProducerRecord(sendSomInputTopic, optRunId.toString, SendSomRequest(optRunId, algorithmCode))
+  private def invokeSomRequestSending(optRunId: Long, algorithmCode: String, messageId:String): F[Unit] = {
+    val record = ProducerRecord(sendSomInputTopic, optRunId.toString, SendSomRequest(optRunId, algorithmCode, messageId))
     eventProducers.somRequestSenderProducer.produce(ProducerRecords.one(record)).flatten.map(_ => ())
   }
   private def refreshSwitch(switch: SignallingRef[F, Boolean]): F[Unit] =

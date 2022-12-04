@@ -15,7 +15,8 @@ object OptimizationRunUpdateEvent {
   @AvroNamespace("dev.rmaiun.somprocessor")
   final case class ChangeState(id: Long, state: OptimizationRunState) extends OptimizationRunUpdateEvent
   @AvroNamespace("dev.rmaiun.somprocessor")
-  final case class SuccessfulResultReceived(id: Long) extends ResultsEvent
+  final case class SuccessResultReceived(id: Long) extends ResultsEvent
+  final case class ErrorResultReceived(id: Long) extends ResultsEvent
   @AvroNamespace("dev.rmaiun.somprocessor")
   final case class BindAlgorithm(id: Long, algorithmCode: String, criticalEndTime: Long) extends OptimizingEvent
   @AvroNamespace("dev.rmaiun.somprocessor")

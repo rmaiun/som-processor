@@ -18,7 +18,9 @@ lazy val root = (project in file("."))
       "dev.profunktor"        %% "fs2-rabbit"        % "4.1.1",
       "ch.qos.logback"         % "logback-classic"   % "1.2.3",
       "org.typelevel"         %% "log4cats-slf4j"    % "2.2.0",
-      "com.github.pureconfig" %% "pureconfig"        % "0.14.0"
+      "com.github.pureconfig" %% "pureconfig"        % "0.14.0",
+      "io.circe"              %% "circe-generic"     % "0.14.2",
+      "io.circe"              %% "circe-parser"      % "0.14.2"
     ),
     testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework")
   )

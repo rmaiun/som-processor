@@ -54,7 +54,7 @@ case class OptimizationRunRequestProcessor[F[_]](
   }
 
   private def updateOptimizationRun(request: Long, optRun: OptimizationRun, algorithm: String): F[(OptimizationRun, String)] = {
-    val endTime = ZonedDateTime.now(ZoneOffset.UTC).toEpochSecond
+    val endTime = ZonedDateTime.now(ZoneOffset.UTC)
     val record1 = ProducerRecord(updateOptimizationRunTopic, optRun.id.toString, BindAlgorithm(optRun.id, algorithm, endTime))
     val record2 = ProducerRecord(updateOptimizationRunTopic, optRun.id.toString, PairRequest(optRun.id, request))
     val chunk   = Chunk.seq(Seq(record1, record2))

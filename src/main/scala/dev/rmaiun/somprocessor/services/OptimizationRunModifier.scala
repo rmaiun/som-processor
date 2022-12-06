@@ -1,30 +1,57 @@
 package dev.rmaiun.somprocessor.services
 
+import cats.Applicative
 import cats.effect.Sync
-import dev.rmaiun.somprocessor.domains.OptimizationRun
+import cats.implicits._
+import dev.rmaiun.somprocessor.domains.{ OptimizationRun, OptimizationRunState }
 import dev.rmaiun.somprocessor.events.OptimizationRunUpdateEvent
-import dev.rmaiun.somprocessor.events.OptimizationRunUpdateEvent.{ChangeState, IncrementResult}
+import dev.rmaiun.somprocessor.events.OptimizationRunUpdateEvent._
 import dev.rmaiun.somprocessor.repositories.OptimizationRunRepository
 import org.typelevel.log4cats.Logger
 
-import java.time.{ZoneOffset, ZonedDateTime}
+import java.time.{ ZoneOffset, ZonedDateTime }
 
 class OptimizationRunModifier[F[_]: Sync](optimizationRunRepository: OptimizationRunRepository[F], logger: Logger[F]) {
-  def applyUpdate(event: OptimizationRunUpdateEvent): F[Unit] =
+  def applyUpdate(event: OptimizationRunUpdateEvent, optimizationRun: OptimizationRun): F[OptimizationRun] =
     event match {
-      case _: IncrementResult => Sync[F].delay(println("I`m IncrementResult"))
-      case _: ChangeState     => Sync[F].delay(println("I`m ChangeState"))
-      case _                  => Sync[F].delay(println("Another type"))
+      case _: IncrementFinalLog =>
+        withCorrectExpirationTime(optimizationRun) { optRun =>
+          optRun.copy(finalLogsReceivedQty = optRun.finalLogsReceivedQty + 1).pure
+        }
+      case _: ChangeOptimizingState =>
+        optimizationRun.copy(state = OptimizationRunState.Optimizing).pure
+      case e3: ChangeState =>
+        withCorrectExpirationTime(optimizationRun) { optRun =>
+          optRun.copy(state = e3.state).pure
+        }
+      case _: SuccessResultReceived =>
+        withCorrectExpirationTime(optimizationRun) { optRun =>
+          val updOptRun = optRun.copy(resultReceived = optRun.resultReceived + 1)
+          if (!updOptRun.successfulResultReceived) {
+            updOptRun.copy(successfulResultReceived = true).pure
+          } else {
+            updOptRun.pure
+          }
+        }
+      case _: ErrorResultReceived =>
+        withCorrectExpirationTime(optimizationRun) { optRun =>
+          optRun.copy(resultReceived = optimizationRun.resultReceived + 1).pure
+        }
+      case BindAlgorithm(_, algorithmCode, criticalEndTime) =>
+        optimizationRun.copy(algorithmCode = algorithmCode, criticalEndTime = criticalEndTime).pure
+      case PairRequest(_, requestId: Long) =>
+        optimizationRun.copy(assignedRequest = requestId).pure
+      case AssignMessageId(_, messageId) =>
+        optimizationRun.copy(messageId = messageId).pure
     }
 
-
-  private def withCorrectExpirationTime(optRun: OptimizationRun )(action : => F[Unit]): F[Unit] ={
-    if (optRun.criticalEndTime.isBefore(ZonedDateTime.now(ZoneOffset.UTC))){
+  private def withCorrectExpirationTime(optRun: OptimizationRun)(action: => OptimizationRun => F[OptimizationRun]): F[OptimizationRun] =
+    if (optRun.criticalEndTime.isBefore(ZonedDateTime.now(ZoneOffset.UTC))) {
       logger.error(s"Optimization ${optRun.id} is outdated so updates will be skipped")
-    }else{
-      action
+      Applicative[F].pure(optRun)
+    } else {
+      action(optRun)
     }
-  }
 }
 
 object OptimizationRunModifier {

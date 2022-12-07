@@ -3,12 +3,10 @@ package dev.rmaiun.somprocessor.services
 import cats.Monad
 import cats.effect.Sync
 import cats.implicits._
-import dev.rmaiun.somprocessor.domains.OptimizationRun._
 import dev.rmaiun.somprocessor.domains.OptimizationRunState
-import dev.rmaiun.somprocessor.dtos.ProcessingEvent.{ CreateSomConnection, GenerateInputDocumentProcessingEvent }
 import dev.rmaiun.somprocessor.dtos.EventProducers
 import dev.rmaiun.somprocessor.events.OptimizationRunUpdateEvent.{ AssignMessageId, ChangeState }
-import fs2.kafka.{ ProducerRecord, ProducerRecords }
+import dev.rmaiun.somprocessor.events.ProcessingEvent.{ CreateSomConnection, GenerateInputDocumentProcessingEvent }
 import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 
@@ -35,20 +33,14 @@ case class SomInputFileGenerator[F[_]: Sync](eventProducers: EventProducers[F], 
 
   private def generateSomInputFile(): F[String] =
     Monad[F].pure(UUID.randomUUID().toString.replaceAll("-", ""))
-  private def markOptimizationAsFailed(optRunId: Long): F[Unit] = {
-    val record = ProducerRecord(updateOptimizationRunTopic, optRunId.toString, ChangeState(optRunId, OptimizationRunState.Finished))
-    eventProducers.optimizationRunUpdateProducer.produce(ProducerRecords.one(record)).flatten.map(_ => ())
-  }
+  private def markOptimizationAsFailed(optRunId: Long): F[Unit] =
+    eventProducers.optimizationRunUpdateProducer.publish(optRunId.toString, ChangeState(optRunId, OptimizationRunState.Finished))
 
-  private def addMessageIdForOptimization(optRunId: Long, messageId: String): F[Unit] = {
-    val record = ProducerRecord(updateOptimizationRunTopic, optRunId.toString, AssignMessageId(optRunId, messageId))
-    eventProducers.optimizationRunUpdateProducer.produce(ProducerRecords.one(record)).flatten.map(_ => ())
-  }
+  private def addMessageIdForOptimization(optRunId: Long, messageId: String): F[Unit] =
+    eventProducers.optimizationRunUpdateProducer.publish(optRunId.toString, AssignMessageId(optRunId, messageId))
 
-  private def createSomConnection(optRunId: Long, algorithmCode: String, messageId: String): F[Unit] = {
-    val record = ProducerRecord(createSomConnectionTopic, optRunId.toString, CreateSomConnection(optRunId, algorithmCode, messageId))
-    eventProducers.somConnectionProducer.produce(ProducerRecords.one(record)).flatten.map(_ => ())
-  }
+  private def createSomConnection(optRunId: Long, algorithmCode: String, messageId: String): F[Unit] =
+    eventProducers.somConnectionProducer.publish(optRunId.toString, CreateSomConnection(optRunId, algorithmCode, messageId))
 }
 
 object SomInputFileGenerator {

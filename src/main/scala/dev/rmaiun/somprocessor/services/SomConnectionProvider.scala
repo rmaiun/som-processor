@@ -3,14 +3,12 @@ package dev.rmaiun.somprocessor.services
 import cats.Monad
 import cats.effect.{ Async, Concurrent }
 import cats.implicits._
-import dev.rmaiun.somprocessor.domains.OptimizationRun.sendSomInputTopic
-import dev.rmaiun.somprocessor.dtos.ProcessingEvent.{ CreateSomConnection, DisconnectFromSom, SendSomRequest }
 import dev.rmaiun.somprocessor.dtos.EventProducers
 import dev.rmaiun.somprocessor.dtos.configuration.AppConfiguration
+import dev.rmaiun.somprocessor.events.ProcessingEvent.{ CreateSomConnection, DisconnectFromSom, SendSomRequest }
 import dev.rmaiun.somprocessor.repositories.AlgorithmLockRepository
 import dev.rmaiun.somprocessor.services.RabbitInitializer.{ AmqpStructures, OpenedConnections, ShutdownSignals }
 import fs2.concurrent.SignallingRef
-import fs2.kafka.{ ProducerRecord, ProducerRecords }
 import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 case class SomConnectionProvider[F[_]: Async](
@@ -50,10 +48,8 @@ case class SomConnectionProvider[F[_]: Async](
       structs.logsConsumer.evalTap(resultReceiver.receiveSomMessage).interruptWhen(shutdownSignals(algorithm)).compile.drain
     ) *> ().pure
 
-  private def invokeSomRequestSending(optRunId: Long, algorithmCode: String, messageId:String): F[Unit] = {
-    val record = ProducerRecord(sendSomInputTopic, optRunId.toString, SendSomRequest(optRunId, algorithmCode, messageId))
-    eventProducers.somRequestSenderProducer.produce(ProducerRecords.one(record)).flatten.map(_ => ())
-  }
+  private def invokeSomRequestSending(optRunId: Long, algorithmCode: String, messageId: String): F[Unit] =
+    eventProducers.somRequestSenderProducer.publish(optRunId.toString, SendSomRequest(optRunId, algorithmCode, messageId))
   private def refreshSwitch(switch: SignallingRef[F, Boolean]): F[Unit] =
     switch.update(x => !x) *> switch.update(x => !x)
 }

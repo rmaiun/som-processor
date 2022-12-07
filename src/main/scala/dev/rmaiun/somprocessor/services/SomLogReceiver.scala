@@ -23,8 +23,7 @@ case class SomLogReceiver[F[_]: Sync](eventProducers: EventProducers[F], logger:
   }
 
   private def updateOptimizationRun(optimizationId: String): F[Unit] = {
-    val record1 = ProducerRecord(updateOptimizationRunTopic, optimizationId, IncrementFinalLog(optimizationId.toLong))
-    eventProducers.optimizationRunUpdateProducer.produce(ProducerRecords.chunk(Chunk.seq(Seq(record1, record1)))).flatten *> ().pure
+    eventProducers.optimizationRunUpdateProducer.publish(optimizationId, IncrementFinalLog(optimizationId.toLong)) *> ().pure
   }
 }
 

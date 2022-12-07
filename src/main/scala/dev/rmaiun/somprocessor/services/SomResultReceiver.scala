@@ -3,11 +3,8 @@ package dev.rmaiun.somprocessor.services
 import cats.effect.Sync
 import cats.implicits._
 import dev.profunktor.fs2rabbit.model.AmqpEnvelope
-import dev.rmaiun.somprocessor.domains.OptimizationRun.updateOptimizationRunTopic
 import dev.rmaiun.somprocessor.dtos.EventProducers
 import dev.rmaiun.somprocessor.events.OptimizationRunUpdateEvent.{ ErrorResultReceived, SuccessResultReceived }
-import fs2.Chunk
-import fs2.kafka.{ ProducerRecord, ProducerRecords }
 import io.circe.parser
 import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
@@ -22,9 +19,8 @@ case class SomResultReceiver[F[_]: Sync](eventProducers: EventProducers[F], logg
   }
 
   private def updateOptimizationRun(optimizationId: String, status: String): F[Unit] = {
-    val event   = if (status == "success") SuccessResultReceived(optimizationId.toLong) else ErrorResultReceived(optimizationId.toLong)
-    val record1 = ProducerRecord(updateOptimizationRunTopic, optimizationId, event)
-    eventProducers.optimizationRunUpdateProducer.produce(ProducerRecords.chunk(Chunk.seq(Seq(record1, record1)))).flatten *> ().pure
+    val event = if (status == "success") SuccessResultReceived(optimizationId.toLong) else ErrorResultReceived(optimizationId.toLong)
+    eventProducers.optimizationRunUpdateProducer.publish(optimizationId, event)
   }
 }
 object SomResultReceiver {

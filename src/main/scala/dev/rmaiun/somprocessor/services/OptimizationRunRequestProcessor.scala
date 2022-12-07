@@ -5,12 +5,11 @@ import cats.effect.Sync
 import cats.implicits._
 import dev.rmaiun.somprocessor.domains.OptimizationRun
 import dev.rmaiun.somprocessor.domains.OptimizationRun._
-import dev.rmaiun.somprocessor.dtos.ProcessingEvent.{ GenerateInputDocumentProcessingEvent, StartRequestProcessingProcessingEvent }
 import dev.rmaiun.somprocessor.dtos.EventProducers
 import dev.rmaiun.somprocessor.events.OptimizationRunUpdateEvent.{ BindAlgorithm, PairRequest }
+import dev.rmaiun.somprocessor.events.ProcessingEvent.{ GenerateInputDocumentProcessingEvent, StartRequestProcessingProcessingEvent }
 import dev.rmaiun.somprocessor.repositories.{ AlgorithmLockRepository, AlgorithmRepository, OptimizationRunRepository }
-import fs2.Chunk
-import fs2.kafka.{ ProducerRecord, ProducerRecords }
+import fs2.kafka.ProducerRecord
 import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 
@@ -57,14 +56,12 @@ case class OptimizationRunRequestProcessor[F[_]](
     val endTime = ZonedDateTime.now(ZoneOffset.UTC)
     val record1 = ProducerRecord(updateOptimizationRunTopic, optRun.id.toString, BindAlgorithm(optRun.id, algorithm, endTime))
     val record2 = ProducerRecord(updateOptimizationRunTopic, optRun.id.toString, PairRequest(optRun.id, request))
-    val chunk   = Chunk.seq(Seq(record1, record2))
-    eventProducers.optimizationRunUpdateProducer.produce(ProducerRecords.chunk(chunk)).flatten.map(_ => optRun.copy(algorithmCode = algorithm)) *>
-      Monad[F].pure((optRun, algorithm))
+    eventProducers.optimizationRunUpdateProducer.publish(optRun.id.toString, BindAlgorithm(optRun.id, algorithm, endTime)) *>
+      eventProducers.optimizationRunUpdateProducer.publish(optRun.id.toString, PairRequest(optRun.id, request)) *>
+      Monad[F].pure((optRun.copy(algorithmCode = algorithm), algorithm))
   }
-  private def invokeFileSending(optRun: OptimizationRun, algorithm: String): F[Unit] = {
-    val record = ProducerRecord(generateInputFileTopic, optRun.id.toString, GenerateInputDocumentProcessingEvent(optRun.id, algorithm))
-    eventProducers.somInputProducer.produce(ProducerRecords.one(record)).flatten.map(_ => ())
-  }
+  private def invokeFileSending(optRun: OptimizationRun, algorithm: String): F[Unit] =
+    eventProducers.somInputProducer.publish(optRun.id.toString, GenerateInputDocumentProcessingEvent(optRun.id, algorithm))
 }
 
 object OptimizationRunRequestProcessor {

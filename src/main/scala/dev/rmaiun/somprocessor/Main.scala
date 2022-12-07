@@ -88,8 +88,8 @@ object Main extends IOApp {
              KafkaConsumer
                .stream(consumerSettings)
                .subscribeTo("opt_run_updates")
-               .records
-               .evalTap(r => processor.applyUpdate(r.record.value))
+               .partitionedRecords
+//               .evalTap(r => processor.applyUpdate(r.record.value))
                .compile
                .drain
            )

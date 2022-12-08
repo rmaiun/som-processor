@@ -3,7 +3,12 @@ package dev.rmaiun.somprocessor.services
 import cats.effect.IO
 import dev.rmaiun.somprocessor.domains.OptimizationRun
 import dev.rmaiun.somprocessor.events.OptimizationRunUpdateEvent
-import dev.rmaiun.somprocessor.events.ProcessingEvent.{ CreateSomConnectionCodec, GenerateInputDocumentProcessingEventCodec, SendSomRequestCodec }
+import dev.rmaiun.somprocessor.events.ProcessingEvent.{
+  CreateSomConnectionCodec,
+  FinalizeOptimizationCodec,
+  GenerateInputDocumentProcessingEventCodec,
+  SendSomRequestCodec
+}
 import fs2.kafka._
 
 object EventConsumersProvider {
@@ -32,6 +37,15 @@ object EventConsumersProvider {
       .subscribeTo(OptimizationRun.sendSomInputTopic)
       .records
       .evalTap(r => processor.sendSomRequest(r.record.value))
+      .compile
+      .drain
+
+  def finalizeOptimizationEventConsumer(processor: OptimizationFinalizer[IO]): IO[Unit] =
+    KafkaConsumer
+      .stream(consumerSettings(FinalizeOptimizationCodec.deserializer))
+      .subscribeTo(OptimizationRun.closeSomConnection)
+      .records
+      .evalTap(r => processor.finalizeOptimization(r.record.value))
       .compile
       .drain
 

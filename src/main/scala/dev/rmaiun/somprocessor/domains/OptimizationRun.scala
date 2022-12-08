@@ -5,8 +5,8 @@ import java.time.ZonedDateTime
 case class OptimizationRun(
   id: Long,
   state: OptimizationRunState,
-  algorithmCode: String,
-  algorithmNodesQty: Int,
+  algorithmCode: String = "n/a",
+  algorithmNodesQty: Int = 4,
   algorithmReleased: Boolean,
   criticalEndTime: ZonedDateTime,
   resultReceived: Int,
@@ -21,4 +21,5 @@ object OptimizationRun {
   val generateInputFileTopic     = "generate_som_input"
   val createSomConnectionTopic   = "som_connection_create"
   val sendSomInputTopic          = "send_som_input"
+  val closeSomConnection         = "close_som_connection"
 }

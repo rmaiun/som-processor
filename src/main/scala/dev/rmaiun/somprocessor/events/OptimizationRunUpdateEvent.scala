@@ -32,6 +32,8 @@ object OptimizationRunUpdateEvent {
   @AvroNamespace("dev.rmaiun.somprocessor.events")
   final case class AssignMessageId(id: Long, messageId: String) extends OptimizingEvent
 
+  final case class ReleaseAlgorithm(id: Long) extends ResultsEvent
+
   object codec {
     implicit val codec: Codec[OptimizationRunUpdateEvent] = Codec.derive
 

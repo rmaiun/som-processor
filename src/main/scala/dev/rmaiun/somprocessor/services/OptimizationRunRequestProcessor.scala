@@ -4,12 +4,10 @@ import cats.Monad
 import cats.effect.Sync
 import cats.implicits._
 import dev.rmaiun.somprocessor.domains.OptimizationRun
-import dev.rmaiun.somprocessor.domains.OptimizationRun._
 import dev.rmaiun.somprocessor.dtos.EventProducers
 import dev.rmaiun.somprocessor.events.OptimizationRunUpdateEvent.{ BindAlgorithm, PairRequest }
 import dev.rmaiun.somprocessor.events.ProcessingEvent.{ GenerateInputDocumentProcessingEvent, StartRequestProcessingProcessingEvent }
 import dev.rmaiun.somprocessor.repositories.{ AlgorithmLockRepository, AlgorithmRepository, OptimizationRunRepository }
-import fs2.kafka.ProducerRecord
 import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 
@@ -54,8 +52,6 @@ case class OptimizationRunRequestProcessor[F[_]](
 
   private def updateOptimizationRun(request: Long, optRun: OptimizationRun, algorithm: String): F[(OptimizationRun, String)] = {
     val endTime = ZonedDateTime.now(ZoneOffset.UTC)
-    val record1 = ProducerRecord(updateOptimizationRunTopic, optRun.id.toString, BindAlgorithm(optRun.id, algorithm, endTime))
-    val record2 = ProducerRecord(updateOptimizationRunTopic, optRun.id.toString, PairRequest(optRun.id, request))
     eventProducers.optimizationRunUpdateProducer.publish(optRun.id.toString, BindAlgorithm(optRun.id, algorithm, endTime)) *>
       eventProducers.optimizationRunUpdateProducer.publish(optRun.id.toString, PairRequest(optRun.id, request)) *>
       Monad[F].pure((optRun.copy(algorithmCode = algorithm), algorithm))

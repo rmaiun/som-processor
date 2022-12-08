@@ -24,6 +24,9 @@ object ProcessingEvent {
   @AvroNamespace("dev.rmaiun.somprocessor.events")
   case class DisconnectFromSom(optimizationId: Long, algorithmCode: String) extends ProcessingEvent
 
+  @AvroNamespace("dev.rmaiun.somprocessor.events")
+  case class FinalizeOptimization(optimizationId: Long, algorithmCode: String) extends ProcessingEvent
+
   object GenerateInputDocumentProcessingEventCodec {
     implicit val codec: Codec[GenerateInputDocumentProcessingEvent] = Codec.derive
 
@@ -72,5 +75,15 @@ object ProcessingEvent {
 
     implicit val deserializer: RecordDeserializer[IO, DisconnectFromSom] =
       avroDeserializer[DisconnectFromSom].using(avroSettings)
+  }
+
+  object FinalizeOptimizationCodec {
+    implicit val codec: Codec[FinalizeOptimization] = Codec.derive
+
+    implicit val serializer: RecordSerializer[IO, FinalizeOptimization] =
+      avroSerializer[FinalizeOptimization].using(avroSettings)
+
+    implicit val deserializer: RecordDeserializer[IO, FinalizeOptimization] =
+      avroDeserializer[FinalizeOptimization].using(avroSettings)
   }
 }

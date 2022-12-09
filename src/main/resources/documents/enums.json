@@ -1,0 +1,53 @@
+{
+  "triggerSchema": [
+    "DEFAULT",
+    "OR",
+    "AND",
+    "NOT",
+    "XOR"
+  ],
+  "activityType": [
+    "HTTP_SYNC"
+  ],
+  "activityStatus": [
+    "SCHEDULED",
+    "IN_PROGRESS",
+    "SUCCESS",
+    "FAILED"
+  ],
+  "events": [
+    {
+      "code": "START_PROCESS_INSTANCE",
+      "payload": {
+        "id": "uuid"
+      }
+    },
+    {
+      "code": "RESCHEDULE_PROCESS_INSTANCE",
+      "payload": {
+        "id": "uuid",
+        "startingTime": "date"
+      }
+    },
+    {
+      "code": "FINISH_PROCESS_INSTANCE",
+      "payload": {
+        "id": "uuid",
+        "status": "FAILED"
+      }
+    },
+    {
+      "code": "ACTIVITY_STARTED",
+      "payload": {
+        "id": "uuid"
+      }
+    },
+    {
+      "code": "ACTIVITY_FINISHED",
+      "payload": {
+        "id": "uuid",
+        "status": "FAILED"
+      }
+    }
+  ]
+}

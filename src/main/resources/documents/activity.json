@@ -1,0 +1,26 @@
+{
+  "code": "OPEN_PRETENDERING_GATE",
+  "name": "Open 'pretendering' gate",
+  "type": "REST_SYNC",
+  "timingConstant": 24,
+  "params": {
+    "uri": "",
+    "dtoIn": {
+      "anything": "",
+      "other": 1
+    }
+  },
+  "activationConfiguration": {
+    "triggers": [
+      {
+        "code": "START_PROCESS_INSTANCE",
+        "received": true
+      }
+    ],
+    "schema": "DEFAULT"
+  },
+  "outputSignals": [
+    "CLOSE_PRETENDERING_GATE"
+  ],
+  "compensation": "POISON_PILL"
+}

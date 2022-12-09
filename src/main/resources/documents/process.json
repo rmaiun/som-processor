@@ -1,0 +1,11 @@
+{
+  "_invocationTime": "2022-12-21T13:00:00.00z",
+  "name": "PT15M Balancing Market [REN]",
+  "code": "REN_SIME_PT15",
+  "someKey": "someValue",
+  "xxx": 11,
+  "traceId": "${code}_${startingTime}",
+  "activityList": [
+    {},{}
+  ]
+}
